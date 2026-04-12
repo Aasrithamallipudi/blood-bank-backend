@@ -90,10 +90,6 @@ public class DonorService {
     }
 
     private String normalizeBloodGroup(String bloodGroup) {
-        if (bloodGroup == null) {
-            return null;
-        }
-
-        return bloodGroup.replace(" ", "+").trim().toUpperCase();
+        return BloodGroupValidator.normalizeAndValidate(bloodGroup);
     }
 }

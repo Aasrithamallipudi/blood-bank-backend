@@ -64,6 +64,16 @@ public class BloodRequestController {
         return service.fulfill(id);
     }
 
+    @PutMapping("/{id}/blood-group")
+    public BloodRequest updatePatientBloodGroup(
+            @PathVariable Long id,
+            @RequestParam String bloodGroup,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Role", required = false) String userRole
+    ) {
+        roleGuardService.requireAnyRole(userRole, "ADMIN", "BLOOD_BANK_ADMIN");
+        return service.updatePatientBloodGroup(id, bloodGroup);
+    }
+
     @GetMapping
     public List<BloodRequest> getAll() {
         return service.getAll();

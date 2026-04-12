@@ -41,15 +41,13 @@ public class EmergencyAlertService {
 
     @Autowired
     private BloodUnitRepository bloodUnitRepository;
-
-    // ✅ Create alert
     public EmergencyAlert createAlert(EmergencyAlertDTO dto) {
 
         EmergencyAlert alert = new EmergencyAlert();
 
         User coordinator = userRepository.findById(dto.getCoordinatorId()).orElseThrow();
 
-        alert.setBloodGroup(dto.getBloodGroup());
+        alert.setBloodGroup(normalizeBloodGroup(dto.getBloodGroup()));
         alert.setRequiredUnits(dto.getRequiredUnits());
         alert.setLocation(dto.getLocation());
         alert.setCoordinator(coordinator);
@@ -57,8 +55,6 @@ public class EmergencyAlertService {
 
         return emergencyAlertRepository.save(alert);
     }
-
-    // ✅ Get active alerts
     public List<EmergencyAlert> getActiveAlerts() {
         return emergencyAlertRepository.findByStatus(EmergencyStatus.ACTIVE);
     }
@@ -69,15 +65,11 @@ public class EmergencyAlertService {
                 normalizeBloodGroup(bloodGroup)
         );
     }
-
-    // ✅ Fulfill alert
     public EmergencyAlert fulfillAlert(Long id) {
         EmergencyAlert alert = emergencyAlertRepository.findById(id).orElseThrow();
         alert.setStatus(EmergencyStatus.FULFILLED);
         return emergencyAlertRepository.save(alert);
     }
-
-    // ✅ Donor match
     public List<Donor> findMatchingDonors(Long alertId) {
         EmergencyAlert alert = emergencyAlertRepository.findById(alertId).orElseThrow();
         return donorRepository.findByBloodGroupIgnoreCase(alert.getBloodGroup());
@@ -148,11 +140,7 @@ public class EmergencyAlertService {
     }
 
     private String normalizeBloodGroup(String bloodGroup) {
-        if (bloodGroup == null) {
-            return null;
-        }
-
-        return bloodGroup.replace(" ", "+").trim().toUpperCase();
+        return BloodGroupValidator.normalizeAndValidate(bloodGroup);
     }
 
     @Transactional

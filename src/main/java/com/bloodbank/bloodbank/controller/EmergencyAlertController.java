@@ -22,8 +22,6 @@ public class EmergencyAlertController {
 
     @Autowired
     private RoleGuardService roleGuardService;
-
-    // ✅ Create alert
     @PostMapping
     public EmergencyAlert create(
             @RequestBody EmergencyAlertDTO dto,
@@ -32,8 +30,6 @@ public class EmergencyAlertController {
         roleGuardService.requireAnyRole(userRole, "ADMIN", "BLOOD_BANK_ADMIN", "EMERGENCY_COORDINATOR");
         return service.createAlert(dto);
     }
-
-    // ✅ Get active alerts
     @GetMapping("/active")
     public List<EmergencyAlert> getActive() {
         return service.getActiveAlerts();
@@ -43,8 +39,6 @@ public class EmergencyAlertController {
     public List<EmergencyAlert> getByBloodGroup(@PathVariable String bloodGroup) {
         return service.getActiveAlertsByBloodGroup(bloodGroup);
     }
-
-    // ✅ Fulfill alert
     @PutMapping("/{id}/fulfill")
     public EmergencyAlert fulfill(
             @PathVariable Long id,
@@ -53,8 +47,6 @@ public class EmergencyAlertController {
         roleGuardService.requireAnyRole(userRole, "ADMIN", "BLOOD_BANK_ADMIN", "EMERGENCY_COORDINATOR");
         return service.fulfillAlert(id);
     }
-
-    // ✅ Donor match (IMPORTANT)
     @GetMapping("/{id}/donor-match")
     public List<Donor> findMatchingDonors(@PathVariable Long id) {
         return service.findMatchingDonors(id);

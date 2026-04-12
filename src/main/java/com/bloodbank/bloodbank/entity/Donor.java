@@ -18,8 +18,6 @@ public class Donor {
 
     @OneToOne
     private User user;
-
-    // getters & setters
     public Long getId() { return id; }
 
     public String getBloodGroup() { return bloodGroup; }

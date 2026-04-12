@@ -2,6 +2,7 @@ package com.bloodbank.bloodbank.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +52,7 @@ public class BloodRequestService {
         BloodRequest request = new BloodRequest();
 
         request.setPatientName(dto.getPatientName());
-        request.setPatientBloodGroup(dto.getPatientBloodGroup());
+        request.setPatientBloodGroup(BloodGroupValidator.normalizeAndValidate(dto.getPatientBloodGroup()));
         request.setComponentType(dto.getComponentType());
         request.setUnitsRequested(dto.getUnitsRequested());
         request.setPriority(dto.getPriority() == null || dto.getPriority().isBlank() ? "NORMAL" : dto.getPriority().trim().toUpperCase());
@@ -82,6 +83,12 @@ public class BloodRequestService {
     public BloodRequest fulfill(Long id) {
         BloodRequest req = repository.findById(id).orElseThrow();
         req.setStatus(RequestStatus.FULFILLED);
+        return repository.save(req);
+    }
+
+    public BloodRequest updatePatientBloodGroup(Long id, String bloodGroup) {
+        BloodRequest req = repository.findById(id).orElseThrow();
+        req.setPatientBloodGroup(BloodGroupValidator.normalizeAndValidate(bloodGroup));
         return repository.save(req);
     }
 
@@ -148,21 +155,44 @@ public class BloodRequestService {
     }
 
     private List<BloodUnit> findMatchingAvailableUnits(BloodRequest request) {
-        String bloodGroup = normalizeBloodGroup(request.getPatientBloodGroup());
+        String recipientGroup = normalizeBloodGroup(request.getPatientBloodGroup());
         String component = request.getComponentType() == null ? "" : request.getComponentType().trim();
+        List<String> compatibleGroups = getCompatibleDonorGroups(recipientGroup);
 
-        if (component.isBlank()) {
-            return bloodUnitRepository.findByStatusAndBloodGroupIgnoreCaseOrderByExpiryDateAsc(
-                    BloodUnitStatus.AVAILABLE,
-                    bloodGroup
-            );
+        return bloodUnitRepository.findAll().stream()
+                .filter(unit -> unit.getStatus() == BloodUnitStatus.AVAILABLE)
+                .filter(unit -> compatibleGroups.contains(normalizeBloodGroup(unit.getBloodGroup())))
+                .filter(unit -> component.isBlank() || component.equalsIgnoreCase(unit.getComponentType()))
+                .sorted(
+                        Comparator
+                                .comparingInt((BloodUnit unit) -> {
+                                    String normalized = normalizeBloodGroup(unit.getBloodGroup());
+                                    int index = compatibleGroups.indexOf(normalized);
+                                    return index >= 0 ? index : Integer.MAX_VALUE;
+                                })
+                                .thenComparing(BloodUnit::getExpiryDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                                .thenComparing(BloodUnit::getId)
+                )
+                .toList();
+    }
+
+    private List<String> getCompatibleDonorGroups(String recipientGroup) {
+        String group = normalizeBloodGroup(recipientGroup);
+        if (group == null || group.isBlank()) {
+            return List.of();
         }
 
-        return bloodUnitRepository.findByStatusAndBloodGroupIgnoreCaseAndComponentTypeIgnoreCaseOrderByExpiryDateAsc(
-                BloodUnitStatus.AVAILABLE,
-                bloodGroup,
-                component
-        );
+        return switch (group) {
+            case "O-" -> List.of("O-");
+            case "O+" -> List.of("O+", "O-");
+            case "A-" -> List.of("A-", "O-");
+            case "A+" -> List.of("A+", "A-", "O+", "O-");
+            case "B-" -> List.of("B-", "O-");
+            case "B+" -> List.of("B+", "B-", "O+", "O-");
+            case "AB-" -> List.of("AB-", "A-", "B-", "O-");
+            case "AB+" -> List.of("AB+", "AB-", "A+", "A-", "B+", "B-", "O+", "O-");
+            default -> List.of(group);
+        };
     }
 
     private EmergencyAlert createEmergencyAlertFromRequest(BloodRequest request, int needed) {
@@ -197,10 +227,6 @@ public class BloodRequestService {
     }
 
     private String normalizeBloodGroup(String bloodGroup) {
-        if (bloodGroup == null) {
-            return null;
-        }
-
-        return bloodGroup.replace(" ", "+").trim().toUpperCase();
+        return BloodGroupValidator.normalizeAndValidate(bloodGroup);
     }
 }

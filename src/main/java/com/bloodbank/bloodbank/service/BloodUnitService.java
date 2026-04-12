@@ -21,16 +21,21 @@ public class BloodUnitService {
 
     @Autowired
     private DonorRepository donorRepository;
-
-    // ✅ Create Blood Unit
     public BloodUnit save(BloodUnitDTO dto) {
 
         BloodUnit unit = new BloodUnit();
 
         Donor donor = donorRepository.findById(dto.getDonorId()).orElseThrow();
 
+        String normalizedBloodGroup = BloodGroupValidator.normalizeAndValidate(dto.getBloodGroup());
+        String donorBloodGroup = donor.getBloodGroup();
+        
+        if (donorBloodGroup != null && !normalizedBloodGroup.equals(donorBloodGroup)) {
+            throw new IllegalArgumentException("Blood unit blood group " + normalizedBloodGroup + " does not match donor's blood group " + donorBloodGroup);
+        }
+
         unit.setDonor(donor);
-        unit.setBloodGroup(dto.getBloodGroup());
+        unit.setBloodGroup(normalizedBloodGroup);
         unit.setComponentType(dto.getComponentType());
         unit.setVolumeMl(dto.getVolumeMl());
         unit.setCreatedAt(LocalDate.now());
@@ -40,8 +45,6 @@ public class BloodUnitService {
 
         return bloodUnitRepository.save(unit);
     }
-
-    // ✅ Get all
     public List<BloodUnit> getAll() {
         return bloodUnitRepository.findAll();
     }
@@ -49,8 +52,6 @@ public class BloodUnitService {
     public List<BloodUnit> getByDonorId(Long donorId) {
         return bloodUnitRepository.findByDonor_IdOrderByIdDesc(donorId);
     }
-
-    // ✅ Mark as tested
     public BloodUnit markAsTested(Long id) {
         BloodUnit unit = bloodUnitRepository.findById(id).orElseThrow();
         if (unit.getStatus() != BloodUnitStatus.TESTING && unit.getStatus() != BloodUnitStatus.COLLECTED) {
@@ -99,8 +100,6 @@ public class BloodUnitService {
         unit.setStatus(BloodUnitStatus.DISCARDED);
         return bloodUnitRepository.save(unit);
     }
-
-    // ✅ Discard
     public BloodUnit discard(Long id) {
         BloodUnit unit = bloodUnitRepository.findById(id).orElseThrow();
         unit.setStatus(BloodUnitStatus.DISCARDED);

@@ -19,8 +19,6 @@ public class BloodUnitController {
 
     @Autowired
     private RoleGuardService roleGuardService;
-
-    // ✅ Create Blood Unit
     @PostMapping
     public BloodUnit create(
             @RequestBody BloodUnitDTO dto,
@@ -29,14 +27,10 @@ public class BloodUnitController {
         roleGuardService.requireAnyRole(userRole, "ADMIN", "BLOOD_BANK_ADMIN");
         return service.save(dto);
     }
-
-    // ✅ Get all blood units
     @GetMapping("/inventory")
     public List<BloodUnit> getAll() {
         return service.getAll();
     }
-
-    // ✅ Mark as tested
     @PutMapping("/{id}/start-testing")
     public BloodUnit startTesting(
             @PathVariable Long id,
@@ -81,8 +75,6 @@ public class BloodUnitController {
         roleGuardService.requireAnyRole(userRole, "ADMIN", "BLOOD_BANK_ADMIN", "HOSPITAL_STAFF");
         return service.markAsTransfused(id);
     }
-
-    // ✅ Discard blood unit
     @PutMapping("/{id}/discard")
     public BloodUnit discard(
             @PathVariable Long id,
@@ -91,8 +83,6 @@ public class BloodUnitController {
         roleGuardService.requireAnyRole(userRole, "ADMIN", "BLOOD_BANK_ADMIN");
         return service.discard(id);
     }
-
-    // ✅ Expiring units
     @GetMapping("/expiring")
     public List<BloodUnit> getExpiring() {
         return service.getExpiring();

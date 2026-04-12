@@ -64,6 +64,7 @@ public class DonorController {
         return service.getByUserId(userId);
     }
 
+
     @GetMapping("/{id}/eligibility")
     public DonorEligibilityDTO getEligibility(
             @PathVariable Long id,
