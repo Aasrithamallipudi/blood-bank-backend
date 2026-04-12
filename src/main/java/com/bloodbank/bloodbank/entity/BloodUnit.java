@@ -22,6 +22,7 @@ public class BloodUnit {
     private String bloodGroup;
     private String componentType;
     private Double volumeMl;
+    private LocalDate createdAt;
 
     @Enumerated(EnumType.STRING)
     private BloodUnitStatus status;
@@ -41,6 +42,9 @@ public class BloodUnit {
 
     public Double getVolumeMl() { return volumeMl; }
     public void setVolumeMl(Double volumeMl) { this.volumeMl = volumeMl; }
+
+    public LocalDate getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
 
     public BloodUnitStatus getStatus() { return status; }
     public void setStatus(BloodUnitStatus status) { this.status = status; }

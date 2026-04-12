@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.bloodbank.bloodbank.dto.AuthResponseDTO;
+import com.bloodbank.bloodbank.dto.LoginRequestDTO;
 import com.bloodbank.bloodbank.dto.UserDTO;
 import com.bloodbank.bloodbank.entity.User;
 import com.bloodbank.bloodbank.service.UserService;
@@ -32,6 +34,15 @@ public class UserController {
     public User register(@RequestBody UserDTO dto) {
         try {
             return service.saveUser(dto);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @PostMapping("/login")
+    public AuthResponseDTO login(@RequestBody LoginRequestDTO dto) {
+        try {
+            return service.login(dto);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }

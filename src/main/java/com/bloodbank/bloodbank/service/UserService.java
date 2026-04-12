@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.bloodbank.bloodbank.dto.AuthResponseDTO;
+import com.bloodbank.bloodbank.dto.LoginRequestDTO;
 import com.bloodbank.bloodbank.dto.UserDTO;
 import com.bloodbank.bloodbank.entity.User;
 import com.bloodbank.bloodbank.enums.Role;
@@ -59,5 +61,26 @@ public class UserService {
         } catch (RuntimeException ex) {
             throw new IllegalArgumentException("Invalid role: " + role);
         }
+    }
+
+    public AuthResponseDTO login(LoginRequestDTO dto) {
+        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+
+        if (dto.getPassword() == null || dto.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+
+        User user = userRepository.findAll().stream()
+            .filter(candidate -> candidate.getEmail().equalsIgnoreCase(dto.getEmail().trim()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+
+        return new AuthResponseDTO(user.getId(), user.getFullName(), user.getEmail(), user.getRole());
     }
 }

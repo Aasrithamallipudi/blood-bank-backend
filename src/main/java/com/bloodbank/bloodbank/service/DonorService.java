@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.bloodbank.bloodbank.dto.DonorEligibilityDTO;
 import com.bloodbank.bloodbank.dto.DonorDTO;
 import com.bloodbank.bloodbank.entity.Donor;
 import com.bloodbank.bloodbank.entity.User;
@@ -27,7 +28,7 @@ public class DonorService {
         User user = userRepository.findById(dto.getUserId()).orElseThrow();
 
         donor.setUser(user);
-        donor.setBloodGroup(dto.getBloodGroup());
+        donor.setBloodGroup(normalizeBloodGroup(dto.getBloodGroup()));
         donor.setWeight(dto.getWeight());
 
         return donorRepository.save(donor);
@@ -38,9 +39,61 @@ public class DonorService {
     }
 
     public List<Donor> getEligible(String bloodGroup) {
-        return donorRepository.findAll()
-                .stream()
-                .filter(d -> d.getBloodGroup().equalsIgnoreCase(bloodGroup))
-                .toList();
+        String normalized = normalizeBloodGroup(bloodGroup);
+        return donorRepository.findByBloodGroupIgnoreCase(normalized);
+    }
+
+    public Donor getByUserId(Long userId) {
+        return donorRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Donor profile not found for user"));
+    }
+
+    public Donor updateDonor(Long donorId, DonorDTO dto) {
+        Donor donor = donorRepository.findById(donorId)
+                .orElseThrow(() -> new IllegalArgumentException("Donor not found"));
+
+        if (dto.getBloodGroup() != null && !dto.getBloodGroup().isBlank()) {
+            donor.setBloodGroup(normalizeBloodGroup(dto.getBloodGroup()));
+        }
+
+        if (dto.getWeight() != null) {
+            donor.setWeight(dto.getWeight());
+        }
+
+        return donorRepository.save(donor);
+    }
+
+    public DonorEligibilityDTO getEligibility(Long donorId) {
+        Donor donor = donorRepository.findById(donorId)
+                .orElseThrow(() -> new IllegalArgumentException("Donor not found"));
+
+        boolean hasBloodGroup = donor.getBloodGroup() != null && !donor.getBloodGroup().isBlank();
+        boolean hasMinWeight = donor.getWeight() != null && donor.getWeight() >= 50;
+        boolean eligible = hasBloodGroup && hasMinWeight;
+
+        DonorEligibilityDTO eligibility = new DonorEligibilityDTO();
+        eligibility.setDonorId(donor.getId());
+        eligibility.setBloodGroup(donor.getBloodGroup());
+        eligibility.setWeight(donor.getWeight());
+        eligibility.setEligible(eligible);
+        eligibility.setStatus(eligible ? "ELIGIBLE" : "NOT_ELIGIBLE");
+
+        if (!hasBloodGroup) {
+            eligibility.setReason("Blood group is required");
+        } else if (!hasMinWeight) {
+            eligibility.setReason("Minimum weight for donation is 50 kg");
+        } else {
+            eligibility.setReason("Eligible for donation");
+        }
+
+        return eligibility;
+    }
+
+    private String normalizeBloodGroup(String bloodGroup) {
+        if (bloodGroup == null) {
+            return null;
+        }
+
+        return bloodGroup.replace(" ", "+").trim().toUpperCase();
     }
 }

@@ -10,4 +10,6 @@ import com.bloodbank.bloodbank.enums.RequestStatus;
 public interface BloodRequestRepository extends JpaRepository<BloodRequest, Long> {
 
     List<BloodRequest> findByStatus(RequestStatus status);
+
+    List<BloodRequest> findByRequestedByUserIdOrderByIdDesc(Long requestedByUserId);
 }

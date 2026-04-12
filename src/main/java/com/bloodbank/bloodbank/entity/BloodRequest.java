@@ -20,6 +20,8 @@ public class BloodRequest {
     private String patientBloodGroup;
     private String componentType;
     private Integer unitsRequested;
+    private String priority;
+    private Long requestedByUserId;
 
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
@@ -37,6 +39,12 @@ public class BloodRequest {
 
     public Integer getUnitsRequested() { return unitsRequested; }
     public void setUnitsRequested(Integer unitsRequested) { this.unitsRequested = unitsRequested; }
+
+    public String getPriority() { return priority; }
+    public void setPriority(String priority) { this.priority = priority; }
+
+    public Long getRequestedByUserId() { return requestedByUserId; }
+    public void setRequestedByUserId(Long requestedByUserId) { this.requestedByUserId = requestedByUserId; }
 
     public RequestStatus getStatus() { return status; }
     public void setStatus(RequestStatus status) { this.status = status; }
